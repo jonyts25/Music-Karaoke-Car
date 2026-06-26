@@ -5,11 +5,13 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import type { LyricsSearchStatus, NormalizedLyricsResult } from "@/lib/lyrics/types";
 import {
   MOCK_SONGS,
+  findSongIndexById,
   formatTime,
   getLyricIndices,
   type LyricLine,
   type MockSong,
 } from "@/lib/mockSong";
+import SongSearchPanel from "./SongSearchPanel";
 
 const TICK_MS = 200;
 
@@ -220,6 +222,16 @@ export default function CarKaraoke() {
     setPlaybackDuration(song.duration);
   };
 
+  const handleSelectSongFromSearch = useCallback(
+    (songId: string) => {
+      const index = findSongIndexById(songId);
+      if (index >= 0) {
+        resetSong(index);
+      }
+    },
+    [resetSong],
+  );
+
   const searchRealLyrics = async () => {
     setIsSearching(true);
     setNotice("");
@@ -283,6 +295,7 @@ export default function CarKaraoke() {
             <p className="mt-1 text-lg text-muted">{song.artist}</p>
           </div>
           <div className="flex w-full flex-col gap-3">
+            <SongSearchPanel onSelectSong={handleSelectSongFromSearch} />
             <span className="rounded-xl border border-border bg-surface px-4 py-2 text-center text-sm font-medium lg:text-left">
               {statusLabel}
             </span>

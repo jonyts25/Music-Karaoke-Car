@@ -25,6 +25,7 @@ Abre [http://localhost:3000](http://localhost:3000).
 - `/car` — interfaz karaoke (modo camioneta) con letras mock y búsqueda LRCLIB
 - `/debug` — viewport, user agent y display mode
 - `/smoke` — prueba mínima de hidratación React
+- `/voice-test` — prueba de micrófono y Speech Recognition
 - `/js-smoke.html` — prueba JS vanilla (sin React)
 
 ## Letras reales con LRCLIB (Paso 2)
@@ -75,6 +76,41 @@ Luego abre `/car` en el navegador del coche o móvil y usa **Buscar letra real**
 - Coldplay — Yellow
 - Daft Punk — Get Lucky
 - Oasis — Wonderwall
+- Soda Stereo — De Música Ligera
+- Zoé — Labios Rotos
+- Luis Miguel — Ahora Te Puedes Marchar
+- Natalia Lafourcade — Hasta la Raíz
+
+## Prueba de búsqueda por voz (Paso 2.5)
+
+Flujo:
+
+```
+Mic / texto → normalizeMusicQuery → searchMockCatalog → seleccionar canción → /car
+```
+
+### En Railway
+
+1. Abre `https://TU-APP.up.railway.app/voice-test`
+2. Toca **Iniciar** (o en `/car` usa **🎙 Buscar por voz**)
+3. Acepta permiso de micrófono
+4. Di: **"Blinding Lights de The Weeknd"**
+5. Confirma transcript y selección en `/car`
+
+### Dónde probar
+
+| Entorno | Rutas | Qué validar |
+|---------|-------|-------------|
+| PC Chrome | `/voice-test`, `/car` | Mic, transcript, selección |
+| iPhone Safari | `/voice-test` | Soporte voz + fallback manual |
+| Android Automotive / Vivaldi | `/voice-test`, `/car` | Mic o búsqueda escrita |
+
+### Notas
+
+- Speech Recognition no está en todos los navegadores.
+- Micrófono requiere **HTTPS** (ver `isSecureContext` en `/debug`).
+- Si voz falla, usa el **input manual**.
+- LRCLIB no se dispara solo al elegir por voz; usa **Buscar letra real** después.
 
 ## Si React no hidrata (botones muertos, todo "unknown")
 
@@ -223,6 +259,12 @@ lib/
     types.ts        # Tipos normalizados
     parseLrc.ts     # Parser LRC
     lrclib.ts       # Cliente LRCLIB
+  voice/
+    useSpeechSearch.ts
+    speechRecognitionSupport.ts
+  search/
+    normalizeMusicQuery.ts
+    searchMockCatalog.ts
 public/
   manifest.json     # PWA manifest
   icon.svg          # Icono de la app

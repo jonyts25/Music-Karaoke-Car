@@ -9,6 +9,7 @@ export type MockSong = {
   artist: string;
   duration: number;
   lyrics: LyricLine[];
+  album?: string;
 };
 
 function mockFallback(intro: string): LyricLine[] {
@@ -25,6 +26,7 @@ export const MOCK_SONGS: MockSong[] = [
     id: "weeknd-blinding-lights",
     title: "Blinding Lights",
     artist: "The Weeknd",
+    album: "After Hours",
     duration: 200,
     lyrics: mockFallback("♪ Blinding Lights (mock) ♪"),
   },
@@ -32,6 +34,7 @@ export const MOCK_SONGS: MockSong[] = [
     id: "coldplay-yellow",
     title: "Yellow",
     artist: "Coldplay",
+    album: "Parachutes",
     duration: 266,
     lyrics: mockFallback("♪ Yellow (mock) ♪"),
   },
@@ -39,6 +42,7 @@ export const MOCK_SONGS: MockSong[] = [
     id: "daft-punk-get-lucky",
     title: "Get Lucky",
     artist: "Daft Punk",
+    album: "Random Access Memories",
     duration: 248,
     lyrics: mockFallback("♪ Get Lucky (mock) ♪"),
   },
@@ -46,8 +50,41 @@ export const MOCK_SONGS: MockSong[] = [
     id: "oasis-wonderwall",
     title: "Wonderwall",
     artist: "Oasis",
+    album: "(What's the Story) Morning Glory?",
     duration: 258,
     lyrics: mockFallback("♪ Wonderwall (mock) ♪"),
+  },
+  {
+    id: "soda-stereo-de-musica-ligera",
+    title: "De Música Ligera",
+    artist: "Soda Stereo",
+    album: "Canción Animal",
+    duration: 215,
+    lyrics: mockFallback("♪ De Música Ligera (mock) ♪"),
+  },
+  {
+    id: "zoe-labios-rotos",
+    title: "Labios Rotos",
+    artist: "Zoé",
+    album: "Reptilectric",
+    duration: 272,
+    lyrics: mockFallback("♪ Labios Rotos (mock) ♪"),
+  },
+  {
+    id: "luis-miguel-ahora-te-puedes-marchar",
+    title: "Ahora Te Puedes Marchar",
+    artist: "Luis Miguel",
+    album: "Soy Como Quiero Ser",
+    duration: 243,
+    lyrics: mockFallback("♪ Ahora Te Puedes Marchar (mock) ♪"),
+  },
+  {
+    id: "natalia-lafourcade-hasta-la-raiz",
+    title: "Hasta la Raíz",
+    artist: "Natalia Lafourcade",
+    album: "Hasta la Raíz",
+    duration: 228,
+    lyrics: mockFallback("♪ Hasta la Raíz (mock) ♪"),
   },
 ];
 
@@ -80,4 +117,8 @@ export function getLyricIndices(
     current,
     next: current < lyrics.length - 1 ? current + 1 : -1,
   };
+}
+
+export function findSongIndexById(id: string): number {
+  return MOCK_SONGS.findIndex((song) => song.id === id);
 }

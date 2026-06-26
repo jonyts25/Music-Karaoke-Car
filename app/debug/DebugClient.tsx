@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useIsClient } from "@/lib/useIsClient";
+import { getSpeechRecognitionSupportFlags } from "@/lib/voice/speechRecognitionSupport";
 
 type DebugInfo = {
   width: string;
@@ -18,6 +19,9 @@ type DebugInfo = {
   visibilityState: string;
   lastUpdated: string;
   errorMessage: string;
+  speechRecognitionSupported: string;
+  webkitSpeechRecognitionSupported: string;
+  isSecureContext: string;
 };
 
 const INITIAL_INFO: DebugInfo = {
@@ -34,6 +38,9 @@ const INITIAL_INFO: DebugInfo = {
   visibilityState: "unknown",
   lastUpdated: "never",
   errorMessage: "",
+  speechRecognitionSupported: "unknown",
+  webkitSpeechRecognitionSupported: "unknown",
+  isSecureContext: "unknown",
 };
 
 const FIELDS: { key: keyof DebugInfo; label: string }[] = [
@@ -49,6 +56,9 @@ const FIELDS: { key: keyof DebugInfo; label: string }[] = [
   { key: "orientation", label: "Orientación" },
   { key: "visibilityState", label: "visibilityState" },
   { key: "lastUpdated", label: "Última actualización" },
+  { key: "speechRecognitionSupported", label: "SpeechRecognition" },
+  { key: "webkitSpeechRecognitionSupported", label: "webkitSpeechRecognition" },
+  { key: "isSecureContext", label: "isSecureContext" },
   { key: "errorMessage", label: "Error" },
 ];
 
@@ -71,6 +81,8 @@ export default function DebugClient() {
       const h = window.innerHeight;
       const vv = window.visualViewport;
 
+      const speech = getSpeechRecognitionSupportFlags();
+
       const next: DebugInfo = {
         width: `${w}px`,
         height: `${h}px`,
@@ -87,6 +99,9 @@ export default function DebugClient() {
         visibilityState: document.visibilityState,
         lastUpdated: new Date().toLocaleTimeString(),
         errorMessage: "",
+        speechRecognitionSupported: speech.speechRecognitionSupported,
+        webkitSpeechRecognitionSupported: speech.webkitSpeechRecognitionSupported,
+        isSecureContext: speech.isSecureContext,
       };
 
       setInfo(next);
@@ -113,6 +128,7 @@ export default function DebugClient() {
         const w = window.innerWidth;
         const h = window.innerHeight;
         const vv = window.visualViewport;
+        const speech = getSpeechRecognitionSupportFlags();
 
         const next: DebugInfo = {
           width: `${w}px`,
@@ -130,6 +146,9 @@ export default function DebugClient() {
           visibilityState: document.visibilityState,
           lastUpdated: new Date().toLocaleTimeString(),
           errorMessage: "",
+          speechRecognitionSupported: speech.speechRecognitionSupported,
+          webkitSpeechRecognitionSupported: speech.webkitSpeechRecognitionSupported,
+          isSecureContext: speech.isSecureContext,
         };
 
         setInfo(next);
