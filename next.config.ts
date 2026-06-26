@@ -20,6 +20,7 @@ const extraOrigins =
     .filter(Boolean) ?? [];
 
 const nextConfig: NextConfig = {
+  output: "standalone",
   turbopack: {
     root: projectRoot,
   },
