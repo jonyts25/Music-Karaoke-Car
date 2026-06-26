@@ -15,7 +15,7 @@
     "dev": "next dev --webpack -H 0.0.0.0",
     "dev:turbo": "next dev -H 0.0.0.0",
     "build": "next build",
-    "start": "next start -H 0.0.0.0",
+    "start": "next start -H 0.0.0.0 -p ${PORT:-3000}",
     "start:lan": "next start -H 0.0.0.0",
     "preview:mobile": "npm run build && next start -H 0.0.0.0",
     "lint": "eslint",
