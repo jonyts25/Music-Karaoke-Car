@@ -22,10 +22,59 @@ npm run dev
 Abre [http://localhost:3000](http://localhost:3000).
 
 - `/` — landing con explicación del spike
-- `/car` — interfaz karaoke (modo camioneta)
+- `/car` — interfaz karaoke (modo camioneta) con letras mock y búsqueda LRCLIB
 - `/debug` — viewport, user agent y display mode
 - `/smoke` — prueba mínima de hidratación React
 - `/js-smoke.html` — prueba JS vanilla (sin React)
+
+## Letras reales con LRCLIB (Paso 2)
+
+Flujo:
+
+```
+/car → GET /api/lyrics/search → LRCLIB → parseLrc → karaoke
+```
+
+En `/car`, pulsa **Buscar letra real** para consultar [LRCLIB](https://lrclib.net) vía el endpoint interno. No requiere API key ni base de datos.
+
+### Probar localmente
+
+1. Arranca la app: `npm run dev`
+2. Abre `/car` y pulsa **Buscar letra real** en una canción conocida.
+3. O prueba el endpoint directamente:
+
+```
+http://localhost:3000/api/lyrics/search?artist=The%20Weeknd&track=Blinding%20Lights
+http://localhost:3000/api/lyrics/search?artist=Coldplay&track=Yellow
+http://localhost:3000/api/lyrics/search?artist=The%20Weeknd&track=Blinding%20Lights&duration=200
+```
+
+### Probar en Railway
+
+Sustituye el host por tu URL de Railway:
+
+```
+https://TU-APP.up.railway.app/api/lyrics/search?artist=Coldplay&track=Yellow
+```
+
+Luego abre `/car` en el navegador del coche o móvil y usa **Buscar letra real**.
+
+### Estados de respuesta
+
+| status | Significado |
+|--------|-------------|
+| `synced` | Letra LRC con timestamps; `/car` entra en modo karaoke sincronizado |
+| `plain` | Solo texto sin timestamps; `/car` muestra modo lectura estático |
+| `instrumental` | LRCLIB marca la pista como instrumental |
+| `not_found` | Sin coincidencias; se conserva la letra mock |
+| `error` | Fallo de red/timeout/LRCLIB; se conserva la letra mock |
+
+### Canciones mock incluidas
+
+- The Weeknd — Blinding Lights
+- Coldplay — Yellow
+- Daft Punk — Get Lucky
+- Oasis — Wonderwall
 
 ## Si React no hidrata (botones muertos, todo "unknown")
 
@@ -151,9 +200,10 @@ Usa `/debug` para confirmar resolución, orientación y `display-mode`.
 
 ## Alcance del spike
 
-- Datos mock locales (2 canciones con letras y timestamps)
+- Datos mock locales (4 canciones conocidas + letras de respaldo)
+- Búsqueda de letras reales vía LRCLIB (`/api/lyrics/search`)
 - Reproducción simulada con `setInterval` (sin audio real)
-- Sin Supabase, Apple Music ni APIs externas
+- Sin Supabase, Apple Music ni YouTube
 - Manifest PWA básico (sin service worker)
 
 ## Estructura principal
@@ -161,13 +211,18 @@ Usa `/debug` para confirmar resolución, orientación y `display-mode`.
 ```
 app/
   page.tsx          # Landing
+  api/lyrics/search/route.ts  # Proxy LRCLIB
   car/
     page.tsx        # Ruta karaoke
-    CarKaraoke.tsx  # UI + lógica de reproducción mock
+    CarKaraoke.tsx  # UI + mock + LRCLIB
   debug/
     page.tsx        # Info de viewport
 lib/
-  mockSong.ts       # Canciones, letras y helpers
+  mockSong.ts       # Canciones mock y helpers
+  lyrics/
+    types.ts        # Tipos normalizados
+    parseLrc.ts     # Parser LRC
+    lrclib.ts       # Cliente LRCLIB
 public/
   manifest.json     # PWA manifest
   icon.svg          # Icono de la app

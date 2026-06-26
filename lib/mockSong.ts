@@ -11,39 +11,43 @@ export type MockSong = {
   lyrics: LyricLine[];
 };
 
+function mockFallback(intro: string): LyricLine[] {
+  return [
+    { time: 0, text: intro },
+    { time: 8, text: "Letra mock de respaldo" },
+    { time: 16, text: "Pulsa «Buscar letra real»" },
+    { time: 24, text: "para consultar LRCLIB" },
+  ];
+}
+
 export const MOCK_SONGS: MockSong[] = [
   {
-    id: "1",
-    title: "Midnight Drive",
-    artist: "Equinox Demo",
-    duration: 48,
-    lyrics: [
-      { time: 0, text: "♪ Intro instrumental ♪" },
-      { time: 4, text: "Luces de neón en el asfalto" },
-      { time: 9, text: "La radio suena, vamos de paso" },
-      { time: 14, text: "Ventanas abajo, brisa en la cara" },
-      { time: 19, text: "Esta noche no hay prisa por llegar" },
-      { time: 24, text: "Cantamos fuerte en el camino" },
-      { time: 29, text: "Cada verso es un destino" },
-      { time: 34, text: "El coro sube, manos al cielo" },
-      { time: 39, text: "Karaoke en movimiento, puro anhelo" },
-      { time: 44, text: "♪ Outro ♪" },
-    ],
+    id: "weeknd-blinding-lights",
+    title: "Blinding Lights",
+    artist: "The Weeknd",
+    duration: 200,
+    lyrics: mockFallback("♪ Blinding Lights (mock) ♪"),
   },
   {
-    id: "2",
-    title: "Highway Echo",
-    artist: "Spike Band",
-    duration: 36,
-    lyrics: [
-      { time: 0, text: "♪ Comienza el viaje ♪" },
-      { time: 5, text: "Eco en la carretera" },
-      { time: 10, text: "Una voz que no se frena" },
-      { time: 15, text: "Pantalla grande, letra clara" },
-      { time: 20, text: "Automotive y sin demora" },
-      { time: 25, text: "Siguiente estrofa, sin pausa" },
-      { time: 30, text: "Fin del demo, aplauso en casa" },
-    ],
+    id: "coldplay-yellow",
+    title: "Yellow",
+    artist: "Coldplay",
+    duration: 266,
+    lyrics: mockFallback("♪ Yellow (mock) ♪"),
+  },
+  {
+    id: "daft-punk-get-lucky",
+    title: "Get Lucky",
+    artist: "Daft Punk",
+    duration: 248,
+    lyrics: mockFallback("♪ Get Lucky (mock) ♪"),
+  },
+  {
+    id: "oasis-wonderwall",
+    title: "Wonderwall",
+    artist: "Oasis",
+    duration: 258,
+    lyrics: mockFallback("♪ Wonderwall (mock) ♪"),
   },
 ];
 
