@@ -22,10 +22,11 @@ npm run dev
 Abre [http://localhost:3000](http://localhost:3000).
 
 - `/` — landing con explicación del spike
-- `/car` — interfaz karaoke (modo camioneta) con letras mock y búsqueda LRCLIB
+- `/car` — interfaz karaoke (modo camioneta) con letras mock, iTunes Preview y LRCLIB
 - `/debug` — viewport, user agent y display mode
 - `/smoke` — prueba mínima de hidratación React
 - `/voice-test` — prueba de micrófono y Speech Recognition
+- `/audio-test` — prueba de preview de audio iTunes (sin karaoke)
 - `/js-smoke.html` — prueba JS vanilla (sin React)
 
 ## Letras reales con LRCLIB (Paso 2)
@@ -111,6 +112,38 @@ Mic / texto → normalizeMusicQuery → searchMockCatalog → seleccionar canci�
 - Micrófono requiere **HTTPS** (ver `isSecureContext` en `/debug`).
 - Si voz falla, usa el **input manual**.
 - LRCLIB no se dispara solo al elegir por voz; usa **Buscar letra real** después.
+
+## Prueba de audio real con iTunes Preview (Paso 3)
+
+Flujo:
+
+```
+voz/input → /api/music/search → iTunes Search → previewUrl → <audio> → lyrics (LRCLIB manual)
+```
+
+### En Railway o local
+
+1. Abre `/audio-test` o `/car`
+2. Pulsa **Buscar en Apple/iTunes Preview** (en `/car`)
+3. Busca: **Blinding Lights The Weeknd**
+4. Toca **Usar preview** / **Elegir**
+5. Toca **Play** (sin autoplay)
+6. Opcional: **Buscar letra real** para sincronizar karaoke con `audio.currentTime`
+
+### Dónde probar
+
+| Entorno | Rutas | Qué validar |
+|---------|-------|-------------|
+| PC Chrome | `/audio-test`, `/car` | Preview suena, progress bar avanza |
+| iPhone Safari | `/audio-test` | Play tras tap, preview ~30 s |
+| Android Automotive / Vivaldi | `/car` | Búsqueda + play + fallback mock |
+
+### Notas
+
+- Son **previews de ~30 segundos**, no Apple Music completo.
+- **No requiere login** ni developer token de Apple Music.
+- Si `audio.play()` falla, verás: *El navegador bloqueó reproducción. Toca Play de nuevo.*
+- El catálogo **mock** sigue disponible con **Volver a catálogo mock**.
 
 ## Si React no hidrata (botones muertos, todo "unknown")
 

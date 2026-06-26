@@ -1,25 +1,34 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import type { MusicSearchResult } from "@/lib/music/types";
 import {
   pickAutoSelectResult,
   searchMockCatalog,
   type CatalogSearchResult,
 } from "@/lib/search/searchMockCatalog";
+import { formatTime } from "@/lib/mockSong";
+import { PREVIEW_NOTICE } from "@/lib/music/previewCopy";
 import { useSpeechSearch } from "@/lib/voice/useSpeechSearch";
 
 type SearchUiStatus = "idle" | "searching" | "not-found";
+type SearchSource = "mock" | "itunes";
 
 type SongSearchPanelProps = {
   onSelectSong: (songId: string) => void;
+  onSelectPreview: (result: MusicSearchResult) => void;
 };
 
 function statusMessage(
+  searchSource: SearchSource,
   isSupported: boolean,
   isListening: boolean,
   searchUiStatus: SearchUiStatus,
   errorMessage: string,
 ): string {
+  if (searchSource === "itunes" && searchUiStatus === "searching") {
+    return "Buscando en iTunes...";
+  }
   if (!isSupported) return "Voz no soportada en este navegador";
   if (isListening) return "Escuchando...";
   if (searchUiStatus === "searching") return "Buscando...";
@@ -28,10 +37,13 @@ function statusMessage(
   }
   if (errorMessage === "No escuché nada") return "No escuché nada";
   if (errorMessage) return errorMessage;
-  return "Voz soportada";
+  return searchSource === "itunes" ? "Modo iTunes Preview" : "Voz soportada";
 }
 
-export default function SongSearchPanel({ onSelectSong }: SongSearchPanelProps) {
+export default function SongSearchPanel({
+  onSelectSong,
+  onSelectPreview,
+}: SongSearchPanelProps) {
   const {
     isSupported,
     isListening,
@@ -43,17 +55,20 @@ export default function SongSearchPanel({ onSelectSong }: SongSearchPanelProps) 
     resetTranscript,
   } = useSpeechSearch();
 
+  const [searchSource, setSearchSource] = useState<SearchSource>("mock");
   const [manualQuery, setManualQuery] = useState("");
-  const [results, setResults] = useState<CatalogSearchResult[]>([]);
+  const [mockResults, setMockResults] = useState<CatalogSearchResult[]>([]);
+  const [itunesResults, setItunesResults] = useState<MusicSearchResult[]>([]);
   const [selectionNotice, setSelectionNotice] = useState("");
   const [searchUiStatus, setSearchUiStatus] = useState<SearchUiStatus>("idle");
+  const [itunesMessage, setItunesMessage] = useState("");
   const lastProcessedTranscript = useRef("");
 
-  const runSearch = useCallback(
+  const runMockSearch = useCallback(
     (rawQuery: string) => {
       const query = rawQuery.trim();
       if (!query) {
-        setResults([]);
+        setMockResults([]);
         setSelectionNotice("");
         setSearchUiStatus("idle");
         return;
@@ -61,9 +76,10 @@ export default function SongSearchPanel({ onSelectSong }: SongSearchPanelProps) 
 
       setSearchUiStatus("searching");
       setSelectionNotice("");
+      setItunesMessage("");
 
       const matches = searchMockCatalog(query);
-      setResults(matches);
+      setMockResults(matches);
 
       const auto = pickAutoSelectResult(matches);
       if (auto) {
@@ -75,7 +91,7 @@ export default function SongSearchPanel({ onSelectSong }: SongSearchPanelProps) 
       }
 
       if (matches.length === 0) {
-        setSelectionNotice("No encontrada");
+        setSelectionNotice("No encontrada en catálogo mock");
         setSearchUiStatus("not-found");
         return;
       }
@@ -83,6 +99,69 @@ export default function SongSearchPanel({ onSelectSong }: SongSearchPanelProps) 
       setSearchUiStatus("idle");
     },
     [onSelectSong],
+  );
+
+  const runItunesSearch = useCallback(async (rawQuery: string) => {
+    const query = rawQuery.trim();
+    if (!query) {
+      setItunesResults([]);
+      setSelectionNotice("");
+      setItunesMessage("");
+      setSearchUiStatus("idle");
+      return;
+    }
+
+    setSearchUiStatus("searching");
+    setSelectionNotice("");
+    setItunesMessage("");
+    setMockResults([]);
+
+    try {
+      const params = new URLSearchParams({ q: query });
+      const response = await fetch(`/api/music/search?${params.toString()}`);
+      const data = (await response.json()) as {
+        status: "ok" | "error";
+        results: MusicSearchResult[];
+        message?: string;
+      };
+
+      if (!response.ok) {
+        setItunesResults([]);
+        setSelectionNotice("Error buscando en iTunes");
+        setItunesMessage(data.message || "Parámetros inválidos.");
+        setSearchUiStatus("not-found");
+        return;
+      }
+
+      if (data.status === "error" || data.results.length === 0) {
+        setItunesResults([]);
+        setSelectionNotice("Sin previews reproducibles");
+        setItunesMessage(data.message || "No hay resultados con previewUrl.");
+        setSearchUiStatus("not-found");
+        return;
+      }
+
+      setItunesResults(data.results);
+      setSearchUiStatus("idle");
+    } catch (error) {
+      setItunesResults([]);
+      setSelectionNotice("Error buscando en iTunes");
+      setItunesMessage(
+        error instanceof Error ? error.message : "Error de red al buscar música.",
+      );
+      setSearchUiStatus("not-found");
+    }
+  }, []);
+
+  const runSearch = useCallback(
+    (rawQuery: string) => {
+      if (searchSource === "itunes") {
+        void runItunesSearch(rawQuery);
+        return;
+      }
+      runMockSearch(rawQuery);
+    },
+    [runItunesSearch, runMockSearch, searchSource],
   );
 
   useEffect(() => {
@@ -101,8 +180,10 @@ export default function SongSearchPanel({ onSelectSong }: SongSearchPanelProps) 
     }
     resetTranscript();
     lastProcessedTranscript.current = "";
-    setResults([]);
+    setMockResults([]);
+    setItunesResults([]);
     setSelectionNotice("");
+    setItunesMessage("");
     setSearchUiStatus("idle");
     startListening();
   };
@@ -111,11 +192,34 @@ export default function SongSearchPanel({ onSelectSong }: SongSearchPanelProps) 
     runSearch(manualQuery);
   };
 
+  const toggleSearchSource = () => {
+    setSearchSource((prev) => (prev === "mock" ? "itunes" : "mock"));
+    setMockResults([]);
+    setItunesResults([]);
+    setSelectionNotice("");
+    setItunesMessage("");
+    setSearchUiStatus("idle");
+  };
+
   const heardText = [transcript, interimTranscript].filter(Boolean).join(" ").trim();
 
   return (
     <div className="flex w-full flex-col gap-3 rounded-2xl border border-border bg-surface p-4">
       <h2 className="text-base font-semibold">Buscar canción</h2>
+
+      <button
+        type="button"
+        onClick={toggleSearchSource}
+        className="inline-flex min-h-12 items-center justify-center rounded-xl border border-border bg-background px-4 text-sm font-semibold transition-colors hover:bg-border/40"
+      >
+        {searchSource === "mock"
+          ? "Buscar en Apple/iTunes Preview"
+          : "Volver a catálogo mock"}
+      </button>
+
+      {searchSource === "itunes" ? (
+        <p className="text-xs leading-relaxed text-muted">{PREVIEW_NOTICE}</p>
+      ) : null}
 
       <button
         type="button"
@@ -147,7 +251,13 @@ export default function SongSearchPanel({ onSelectSong }: SongSearchPanelProps) 
       </div>
 
       <p className="text-sm text-muted">
-        {statusMessage(isSupported, isListening, searchUiStatus, errorMessage)}
+        {statusMessage(
+          searchSource,
+          isSupported,
+          isListening,
+          searchUiStatus,
+          errorMessage,
+        )}
       </p>
 
       {heardText ? (
@@ -160,9 +270,13 @@ export default function SongSearchPanel({ onSelectSong }: SongSearchPanelProps) 
         <p className="text-sm font-medium text-foreground">{selectionNotice}</p>
       ) : null}
 
-      {results.length > 1 ? (
+      {itunesMessage ? (
+        <p className="text-xs leading-relaxed text-muted">{itunesMessage}</p>
+      ) : null}
+
+      {searchSource === "mock" && mockResults.length > 1 ? (
         <ul className="space-y-2">
-          {results.slice(0, 5).map(({ song }) => (
+          {mockResults.slice(0, 5).map(({ song }) => (
             <li
               key={song.id}
               className="flex items-center justify-between gap-3 rounded-xl border border-border bg-background px-3 py-2"
@@ -177,11 +291,56 @@ export default function SongSearchPanel({ onSelectSong }: SongSearchPanelProps) 
                   const label = `${song.title} — ${song.artist}`;
                   setSelectionNotice(`Seleccioné: ${label}`);
                   onSelectSong(song.id);
-                  setResults([]);
+                  setMockResults([]);
                 }}
                 className="inline-flex min-h-10 shrink-0 items-center justify-center rounded-lg border border-border px-4 text-sm font-semibold transition-colors hover:bg-border/40"
               >
                 Usar
+              </button>
+            </li>
+          ))}
+        </ul>
+      ) : null}
+
+      {searchSource === "itunes" && itunesResults.length > 0 ? (
+        <ul className="space-y-2">
+          {itunesResults.map((result) => (
+            <li
+              key={result.id}
+              className="flex items-center gap-3 rounded-xl border border-border bg-background px-3 py-2"
+            >
+              {result.artworkUrl ? (
+                <img
+                  src={result.artworkUrl}
+                  alt=""
+                  className="h-14 w-14 shrink-0 rounded-lg object-cover"
+                />
+              ) : (
+                <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-lg border border-border bg-surface text-xs text-muted">
+                  ♪
+                </div>
+              )}
+              <div className="min-w-0 flex-1">
+                <p className="truncate font-medium">{result.title}</p>
+                <p className="truncate text-sm text-muted">{result.artist}</p>
+                {result.album ? (
+                  <p className="truncate text-xs text-muted">{result.album}</p>
+                ) : null}
+                {result.duration ? (
+                  <p className="text-xs text-muted">{formatTime(result.duration)}</p>
+                ) : null}
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  const label = `${result.title} — ${result.artist}`;
+                  setSelectionNotice(`Preview: ${label}`);
+                  onSelectPreview(result);
+                  setItunesResults([]);
+                }}
+                className="inline-flex min-h-10 shrink-0 items-center justify-center rounded-lg border border-border px-4 text-sm font-semibold transition-colors hover:bg-border/40"
+              >
+                Usar preview
               </button>
             </li>
           ))}
